@@ -1,0 +1,67 @@
+@echo off
+setlocal enabledelayedexpansion
+
+cd /d "c:\Users\David\Desktop\Új mappa"
+
+REM Compile the Java player code
+javac -cp game_engine.jar --release 8 Agent.java
+
+REM If compilation failed, stop the script
+if errorlevel 1 (
+    echo Compilation failed. Exiting...
+    exit /b 1
+)
+
+REM Define the seeds to run
+set seeds=104309891 209750747 417432024 541722499 642050183 786358960 796651351 822175313 974538078 999749224
+REM           1.        2.        3.        4.        5.        6.        7.        8.        9.       10.
+
+set /a count=0
+set /a sum=0
+set /a passed=0
+
+for %%s in (%seeds%) do (
+    set /a count+=1
+
+    echo !count!.
+    echo Seed: %%s
+
+    for /f "delims=" %%A in ('java -jar game_engine.jar 999999 game.mario.MarioGame %%s 1000 Agent') do (
+        set "output=%%A"
+    )
+
+    REM Remove the prefix to isolate the number
+    for /f "tokens=3 delims= " %%A in ("!output!") do (
+        set "num=%%A"
+    )
+    REM cast to int
+    for /f "tokens=1 delims=." %%A in ("!num!") do (
+        if "!num!"=="RUN" (
+                echo Test failed run out of time!
+                echo --------------
+            )
+        set "num=%%A"
+    )
+
+    echo Score: !num!
+    echo --------------
+
+    REM Check if num is less than 2000 or equals "RUN"
+    if "!num!"=="RUN" (
+        echo Test failed run out of time!
+        echo --------------
+    ) else (
+        set /a testNum=!num!
+        if !testNum! LSS 2000 (
+            echo Test failed to reach 2000 score.
+            echo --------------
+        ) else (
+            REM Add to sum only if passed
+            set /a sum+=testNum
+            set /a passed+=1
+        )
+    )
+)
+
+echo Passed: !passed!/!count!
+echo Final Sum of Scores: !sum!
